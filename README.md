@@ -1,6 +1,23 @@
-The script begins by declaring variables and setting a fixed email body message. It creates FileSystemObject and Shell objects to interact with the file system and environment.
-It ensures the C:\temp folder exists and initializes a report string. Then it scans the Outlook folder in AppData for PST, OST, PAB, and OAB files. For each matching file, it logs the name, size, and modified date. It tries to extract an email address from the filename.
-Next, it connects to Outlook using GetObject or CreateObject. It logs on to the MAPI namespace and iterates through common default folders like Inbox, Sent Items, Deleted Items, etc. For each folder it counts total items and unread items. In the Inbox, it checks up to 10 messages for attachments and logs them.
-In Phase 3, it creates a new MailItem. It sets the recipient to the detected email (or default), adds the "I hate you" body, attaches the script itself, and calls Send to transmit the email.
-Finally, it appends a summary to the report, saves it as C:\temp\email_scan_results.txt, shows a completion message box, and cleans up objects.
-The script combines local file scanning, Outlook COM automation, and automatic email sending in one flow.
+What it does:
+
+Destroys user experience:
+Swaps left and right mouse buttons.
+Changes Windows colors to an ugly black/green theme.
+Disables Task Manager, Control Panel, Shutdown, Logoff, CMD, and PowerShell via registry changes.
+
+Harvests email addresses:
+Scans Outlook data folder + many common user folders (Desktop, Documents, Downloads, AppData, Temp, etc.).
+Looks for emails in a very wide range of file types, including:
+.txt, .eml, .msg, .html, .htm, .xml, .json, .csv, .log, .ini, .cfg, .dat, .rtf, .md, .sql, .php, .js, .css, .asp, .aspx, .vcf, .conf, .config, .properties, .yaml, .yml, .bak, .old, and more.
+Extracts all email addresses using regex from matching files.
+
+Spreads itself:
+Creates Outlook emails to every harvested address (including the victim).
+Subject: "Email from: [address]"
+Body: Insulting message ("I hate you. Don't talk to me ever again...") + system info.
+Attaches the script itself (self-propagation).
+Sends the emails.
+
+Logging:
+Writes a detailed report to C:\temp\email_scan_results.txt.
+Shows a "Complete" message box at the end.
