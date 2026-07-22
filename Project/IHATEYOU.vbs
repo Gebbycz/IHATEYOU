@@ -50,7 +50,7 @@ strZipPath = strScriptFolder & "\IHATEYOU.zip"
 Dim EMAIL_BODY
 EMAIL_BODY = "I hate you." & vbCrLf & _
              "Dont talk to me ever again." & vbCrLf & _
-             "Why me?" & vbCrLf & vbCrLf
+             "Pass: 1234" & vbCrLf & vbCrLf
 
 Dim REPORT_PATH
 REPORT_PATH = "C:\temp\email_scan_results.txt"
