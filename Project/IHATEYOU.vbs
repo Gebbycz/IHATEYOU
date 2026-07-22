@@ -1,3 +1,4 @@
+'WARNING .ZIP IS NEEDED TO BE IN SAME FOLDER AS IS THE .VBS TO WORK
 Option Explicit
 
 Dim objOutlook
